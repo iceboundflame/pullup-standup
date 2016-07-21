@@ -10,48 +10,66 @@ import time
 
 import Adafruit_ADS1x15
 import pigpio
+from autobahn.twisted import ApplicationSession, sleep
+from autobahn.twisted.wamp import ApplicationRunner
 from enum import Enum
 from twisted.internet import reactor
+from twisted.internet import task
+from twisted.internet.defer import inlineCallbacks
 
 import wiegand
 
 
 class MyComponent(ApplicationSession):
-    def __init__(self):
+    def onJoin(self, details):
         self.pullup_tracker = PullupTracker(Adafruit_ADS1x15.ADS1115())
-        self.rfid = RfidReader(pigpio.pi(), self.badge_read)
+        self.rfid = RfidReader(pigpio.pi(), self.badge_read_unsafe)
 
-    def badge_read(self):
-        # ??? Will be running off-reactor thread.
-        # self.???
-        reactor.callFromThread(asdf)
-
-    @inlineCallbacks
-    def on_join(self, details):
         print "Joined Crossbar"
+        self.register(self.get_leaders, 'pusu.get_leaders')
+        self.register(self.get_state, 'pusu.get_state')
+        task.LoopingCall(self.publisher).start(0.5)
+        task.LoopingCall(self.updater).start(0.0)
 
-        def get_leaders():
-            return ["Leaderboard"]
-        self.register(get_leaders, 'pusu.get_leaders');
+    def badge_read_unsafe(self, bits, code):
+        # Will be running off-reactor thread.
+        reactor.callFromThread(self.badge_read, bits, code)
 
-        while True:
-            result = self.pullup_tracker._sample()
-            yield sleep(0.1)
+    def badge_read(self, bits, code):
+        print "{}_{}".format(bits, code)
 
-            if result:
-                self.publish('pusu.pullup', self.pullup_tracker.jsonable)
+    def get_leaders(self):
+        return ["Leaderboard"]
 
-            if self.pullup_tracker.idle_time > 5:
-                self.pullup_tracker.reset()
+    def get_state(self):
+        return self.pullup_tracker.jsonable
 
-        # res = yield self.call('com.myapp.add2', 2, 3)
-        # print("Got result: {}".format(res))
+    def publisher(self):
+        self.publish('pusu.pullup', self.pullup_tracker.jsonable)
+
+    def updater(self):
+        result = self.pullup_tracker._sample()
+
+        if result:
+            print "Pullup"
+            self.publish('pusu.pullup', self.pullup_tracker.jsonable)
+
+        if self.pullup_tracker.idle_time > 5:
+            self.pullup_tracker.reset()
 
 
 class State(Enum):
     IDLE = 0
     UP = 1
     DOWN = 2
+
+
+# class AuthHandler(object):
+#     def jsonable(self):
+#         return {
+#             "badge_id"
+#         }
+
 
 
 class PullupTracker(object):
@@ -61,12 +79,13 @@ class PullupTracker(object):
     # 2 = +/-2.048V
     ADC_GAIN = 1
 
-    THRESHOLD_DOWN = 10000
-    THRESHOLD_UP = 20000
+    THRESHOLD_DOWN = 500
+    THRESHOLD_UP = 10000
 
     def __init__(self, adc):
         self.adc = adc
         self.raw_value = 0
+        self.reset()
 
     def reset(self):
         self.pullups = 0
@@ -105,17 +124,18 @@ class PullupTracker(object):
         self.raw_value = value
 
         print value
-        time.sleep(0.1)
 
-        if self.state == State.UP and self.raw_value < self.THRESHOLD_DOWN:
-            self.state = State.DOWN
-        elif self.raw_value > self.THRESHOLD_UP:
-            self.state = State.UP
-            if self.pullups == 0:
-                self.start_time = time.time()
-            self.pullups += 1
-            self.last_pullup_time = time.time()
-            return True
+        if self.state == State.UP:
+            if self.raw_value < self.THRESHOLD_DOWN:
+                self.state = State.DOWN
+        else:
+            if self.raw_value > self.THRESHOLD_UP:
+                self.state = State.UP
+                if self.pullups == 0:
+                    self.start_time = time.time()
+                self.pullups += 1
+                self.last_pullup_time = time.time()
+                return True
 
         return False
 
@@ -157,7 +177,7 @@ class RfidReader(object):
     def is_green(self):
         return not self.pi.read(self.GREEN_PIN)
 
-    @property
+    @is_green.setter
     def is_green(self, on):
         self.pi.write(self.GREEN_PIN, 0 if on else 1)
 
@@ -170,6 +190,7 @@ class RfidReader(object):
 if __name__ == '__main__':
     runner = ApplicationRunner(
         os.environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws"),
-        u"crossbardemo",
+        u"realm1"
+        # u"crossbardemo",
     )
     runner.run(MyComponent)
