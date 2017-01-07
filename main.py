@@ -17,71 +17,110 @@ from twisted.internet import reactor
 from twisted.internet import task
 
 import wiegand
-from store import UserStore, User
+from store import UserStore, User, PullupRecord
 
 
 class MyComponent(ApplicationSession):
     def onJoin(self, details):
-        self.pullup_tracker = PullupTracker(Adafruit_ADS1x15.ADS1115())
+        self.pullup_tracker = PullupTracker()
         self.rfid = RfidReader(pigpio.pi(), self.badge_read_unsafe)
 
+        self.current_user = None
+        self.enrolling_code = False
+
+        self.store = UserStore("users.json")
+        self.store.load()
+
         print "Joined Crossbar"
-        self.register(self.get_leaders, 'pusu.get_leaders')
         self.register(self.get_state, 'pusu.get_state')
+        self.register(self.enroll, 'pusu.enroll')
+        self.register(self.signout, 'pusu.signout')
         task.LoopingCall(self.publisher).start(0.5)
         task.LoopingCall(self.updater).start(0.0)
 
-    def badge_read_unsafe(self, bits, code):
-        # Will be running off-reactor thread.
-        reactor.callFromThread(self.badge_read, bits, code)
+    #
+    # Authentication
+    #
 
-    def badge_read(self, bits, code):
-        print "{}_{}".format(bits, code)
+    def badge_read_unsafe(self, bits, raw_code):
+        # Will be running off-reactor thread. Reschedule on-thread.
+        reactor.callFromThread(self.badge_read, bits, raw_code)
 
-    def get_leaders(self):
-        return ["Leaderboard"]
+    def badge_read(self, bits, raw_code):
+        badge_code = "{}_{}".format(bits, raw_code)
+        self.current_user = self.store.lookup_badge_code(badge_code)
+        if not self.current_user:
+            self.enrolling_code = badge_code
+        self.publish_state()
+
+    def enroll(self, username):
+        if not self.enrolling_code:
+            return
+
+        if username:
+            self.current_user = self.store.get_user(username)
+            if not self.current_user:
+                self.current_user = User(username)
+
+            self.current_user.badge_codes.append(self.enrolling_code)
+            self.store.save_user(self.current_user)
+
+        self.enrolling_code = None
+        self.publish_state()
+
+    def signout(self):
+        self.current_user = None
+
+    #
+    # State
+    #
 
     def get_state(self):
-        return self.pullup_tracker.jsonable
         return {
             "pullup": self.pullup_tracker.jsonable,
-            "auth": self.auth_handler.jsonable,
-            "leaders": self.leaderboard.jsonable,
+            "current_user": self.current_user.jsonable if self.current_user else None,
+            "enroll_mode": self.enrolling_code is not None,
         }
 
+    def publish_state(self):
+        self.publish('pusu.state', self.get_state())
+
     def publisher(self):
-        self.publish('pusu.pullup', self.pullup_tracker.jsonable)
+        self.publish_state()
+
+    #
+    # Pullups
+    #
 
     def updater(self):
         result = self.pullup_tracker._sample()
 
         if result:
-            print "Pullup"
-            self.publish('pusu.pullup', self.pullup_tracker.jsonable)
+            if result == "UP":
+                print "Pullup"
+                self.rfid.beep_for(0.015)
+            elif result == "DOWN":
+                print "Down"
+                self.rfid.beep_for(0.070)
+
+            self.publish_state()
 
         if self.pullup_tracker.idle_time > 5:
-            self.pullup_tracker.reset()
+            self.record_pullup_set()
+            self.rfid.beep_for(0.250)
+
+    def record_pullup_set(self):
+        if self.current_user:
+            self.current_user.records.append(
+                PullupRecord(pullups=self.pullup_tracker.pullups, time_in_set=self.pullup_tracker.time_in_set))
+            self.store.save_user(self.current_user)
+        self.pullup_tracker.reset()
 
 
 class State(Enum):
     IDLE = 0
     UP = 1
     DOWN = 2
-
-
-class AuthHandler(object):
-    def __init__(self, user_store):
-        pass
-
-    def badge_swiped(self, bits, code):
-        pass
-
-    def jsonable(self):
-        return {
-            # "badge_id":
-
-        }
-
 
 
 class PullupTracker(object):
@@ -94,8 +133,8 @@ class PullupTracker(object):
     THRESHOLD_DOWN = 500
     THRESHOLD_UP = 10000
 
-    def __init__(self, adc):
-        self.adc = adc
+    def __init__(self):
+        self.adc = Adafruit_ADS1x15.ADS1115()
         self.raw_value = 0
         self.reset()
 
@@ -106,11 +145,18 @@ class PullupTracker(object):
         self.last_pullup_time = None
 
     @property
-    def time_in_set(self):
+    def time_since_start(self):
         if not self.start_time:
             return 0
 
         return time.time() - self.start_time
+
+    @property
+    def time_in_set(self):
+        if not self.start_time or not self.last_pullup_time:
+            return 0
+
+        return self.last_pullup_time - self.start_time
 
     @property
     def idle_time(self):
@@ -140,6 +186,7 @@ class PullupTracker(object):
         if self.state == State.UP:
             if self.raw_value < self.THRESHOLD_DOWN:
                 self.state = State.DOWN
+                return "DOWN"
         else:
             if self.raw_value > self.THRESHOLD_UP:
                 self.state = State.UP
@@ -147,14 +194,15 @@ class PullupTracker(object):
                     self.start_time = time.time()
                 self.pullups += 1
                 self.last_pullup_time = time.time()
-                return True
+                return "UP"
 
-        return False
+        return
 
     @property
     def jsonable(self):
         return {
             "pullups": self.pullups,
+            "time_since_start": self.time_since_start,
             "time_in_set": self.time_in_set,
             "idle_time": self.idle_time,
             # "raw_value": self.raw_value,

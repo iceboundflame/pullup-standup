@@ -1,61 +1,58 @@
 #!/usr/bin/env python
 
 import simplejson as json
+import attr
+import datetime
 
 
+@attr.attributes
 class PullupRecord(object):
-    def __init__(self, created_at, pullups, time_in_set):
-        self.created_at = created_at
-        self.pullups = pullups
-        self.time_in_set = time_in_set
-
-    def to_jsonable(self):
-        return self.__dict__
-
-    @staticmethod
-    def from_jsonable(jsonable):
-        return PullupRecord(**jsonable)
-        #     jsonable['created_at'],
-        #     jsonable['pullups'],
-        #     jsonable['time_in_set']
-        # )
+    created_at = attr.attr(default=attr.Factory(lambda: datetime.datetime.utcnow().isoformat()))
+    pullups = attr.attr(default=0)
+    time_in_set = attr.attr(default=0.0)
 
 
+@attr.attributes
 class User(object):
-    def __init__(self, username, name, records):
-        self.username = username
-        self.name = name
-        self.records = records
+    username = attr.attr()
+    name = attr.attr()
+    badge_codes = attr.attr(default=[])
+    records = attr.attr(
+        default=[],
+        convert=lambda vals: [PullupRecord(**v) for v in vals]
+    )
 
-    @staticmethod
-    def from_jsonable(jsonable):
-        j = dict(jsonable)
-        j['records'] = [PullupRecord.from_jsonable(r) for r in j['records']]
-        return User(**j)
-
-    def to_jsonable(self):
-        j = dict(self.__dict__)
-        j['records'] = [r.to_jsonable() for r in self.records]
-        return j
+    @property
+    def jsonable(self):
+        ## FIXME SECURITY: Need to exclude badge codes when returning to web?
+        return attr.asdict(self)
 
 
+@attr.attributes
 class UserStore(object):
-    def __init__(self, filename):
-        self.filename = filename
-        self.users = {}
-        self.load()
+    filename = attr.attr()
+    users = attr.attr(default={})
 
     def get_user(self, username):
         return self.users[username]
+
+    def lookup_badge_code(self, badge_code):
+        for u in self.users:
+            if any(c == badge_code for c in u.badge_codes):
+                return u
+        return
 
     def save_user(self, user):
         self.users[user.username] = user
         self.save()
 
     def load(self):
-        with open(self.filename) as fh:
-            self.users = {k: User.from_jsonable(u) for k, u in json.load(fh).items()}
+        try:
+            with open(self.filename) as fh:
+                self.users = {k: User(**u) for k, u in json.load(fh).items()}
+        except Exception as e:
+            print "Couldn't open", self.filename, e
 
     def save(self):
         with open(self.filename, "w") as fh:
-            json.dump(fh, {k: u.to_jsonable() for k, u in self.users.items()})
+            json.dump(fh, {k: u.jsonable for k, u in self.users.items()})
