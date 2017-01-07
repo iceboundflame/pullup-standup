@@ -4,20 +4,20 @@
 # BCM 13 = Data 1
 # BCM 5 = Beeper
 # BCM 6 = Green LED
-
+import simplejson as json
 import os
 import time
 
 import Adafruit_ADS1x15
 import pigpio
-from autobahn.twisted import ApplicationSession, sleep
+from autobahn.twisted import ApplicationSession
 from autobahn.twisted.wamp import ApplicationRunner
 from enum import Enum
 from twisted.internet import reactor
 from twisted.internet import task
-from twisted.internet.defer import inlineCallbacks
 
 import wiegand
+from store import UserStore, User
 
 
 class MyComponent(ApplicationSession):
@@ -43,6 +43,11 @@ class MyComponent(ApplicationSession):
 
     def get_state(self):
         return self.pullup_tracker.jsonable
+        return {
+            "pullup": self.pullup_tracker.jsonable,
+            "auth": self.auth_handler.jsonable,
+            "leaders": self.leaderboard.jsonable,
+        }
 
     def publisher(self):
         self.publish('pusu.pullup', self.pullup_tracker.jsonable)
@@ -64,11 +69,18 @@ class State(Enum):
     DOWN = 2
 
 
-# class AuthHandler(object):
-#     def jsonable(self):
-#         return {
-#             "badge_id"
-#         }
+class AuthHandler(object):
+    def __init__(self, user_store):
+        pass
+
+    def badge_swiped(self, bits, code):
+        pass
+
+    def jsonable(self):
+        return {
+            # "badge_id":
+
+        }
 
 
 
