@@ -16,7 +16,7 @@ class PullupRecord(object):
 class User(object):
     username = attr.attr()
     name = attr.attr()
-    badge_codes = attr.attr(default=[])
+    badge_codes = attr.attr(default=attr.Factory(list))
     records = attr.attr(
         default=[],
         convert=lambda vals: [PullupRecord(**v) for v in vals]
@@ -34,10 +34,10 @@ class UserStore(object):
     users = attr.attr(default={})
 
     def get_user(self, username):
-        return self.users[username]
+        return self.users.get(username)
 
     def lookup_badge_code(self, badge_code):
-        for u in self.users:
+        for u in self.users.values():
             if any(c == badge_code for c in u.badge_codes):
                 return u
         return
@@ -55,4 +55,4 @@ class UserStore(object):
 
     def save(self):
         with open(self.filename, "w") as fh:
-            json.dump(fh, {k: u.jsonable for k, u in self.users.items()})
+            json.dump({k: u.jsonable for k, u in self.users.items()}, fh)
