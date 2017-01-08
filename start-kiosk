@@ -1,0 +1,5 @@
+#!/bin/sh
+
+export DISPLAY=:0
+sleep 2
+chromium-browser http://localhost:8080 --kiosk

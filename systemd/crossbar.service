@@ -1,0 +1,16 @@
+[Unit]
+Description=Crossbar.io
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+ExecStart=/home/pi/venv/bin/crossbar start --cbdir=/home/pi/sw/.crossbar
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

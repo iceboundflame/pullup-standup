@@ -1,0 +1,18 @@
+[Unit]
+Description=Pull-up Standup
+Requires=crossbar.service pigpiod.service
+After=crossbar.service pigpiod.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+ExecStart=/home/pi/venv/bin/python /home/pi/sw/main.py
+WorkingDirectory=/home/pi/sw
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+export DISPLAY=:0
+WID=$(xdotool search --onlyvisible --class chromium|head -1)
+echo refreshing window $WID
+xdotool windowactivate ${WID}
+# xdotool key ctrl+F5
+xdotool key ctrl+shift+F5
