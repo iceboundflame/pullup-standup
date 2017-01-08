@@ -100,10 +100,13 @@ class CurrentUser extends React.Component {
 class Enrollment extends React.Component {
   constructor() {
     super();
-    this.state = {'username': 'a'};
+    this.state = {'username': ''};
     this.handleChange = this.handleChange.bind(this);
     this.enroll = this.enroll.bind(this);
     this.cancel = this.cancel.bind(this);
+  }
+  componentDidMount() {
+    this.usernameInput.focus();
   }
   handleChange(event) {
     this.setState({'username': event.target.value});
@@ -123,8 +126,9 @@ class Enrollment extends React.Component {
         <div>
           <h2>Welcome new user! Please register:</h2>
           <form>
-            <input type="text" value={this.state.username} onChange={this.handleChange} />
-            <button onClick={this.enroll}>Register</button>
+            <input type="text" value={this.state.username} onChange={this.handleChange}
+              ref={(input) => { this.usernameInput = input; } }/>
+            <button onClick={this.enroll} disabled={!this.state.username}>Register</button>
             <button onClick={this.cancel}>Cancel</button>
           </form>
         </div>
