@@ -47,37 +47,46 @@ class MyComponent(ApplicationSession):
         reactor.callFromThread(self.badge_read, bits, raw_code)
 
     def badge_read(self, bits, raw_code):
-        self.pullup_tracker.reset()
+        self.signout()
 
         badge_code = "{}_{}".format(bits, raw_code)
         self.current_user = self.store.lookup_badge_code(badge_code)
         if self.current_user:
             print "Signed in user", self.current_user
+            self.rfid.is_green = True
         else:
             print "Couldn't find user, enroll", badge_code
             self.enrolling_code = badge_code
+
         self.publish_state()
 
     def enroll(self, username):
         if not self.enrolling_code:
             return
 
-        if username:
-            self.current_user = self.store.get_user(username)
-            if self.current_user:
-                print "Adding badge code to user", self.current_user
-            else:
-                self.current_user = User(username, "User " + username)
-                print "Creating new user", self.current_user
+        if not username:
+            self.signout()
+            return
 
-            self.current_user.badge_codes.append(self.enrolling_code)
-            self.store.save_user(self.current_user)
+        self.current_user = self.store.get_user(username)
+        if self.current_user:
+            print "Adding badge code to user", self.current_user
+        else:
+            self.current_user = User(username, "User " + username)
+            print "Creating new user", self.current_user
 
-        self.enrolling_code = None
+        self.current_user.badge_codes.append(self.enrolling_code)
+        self.store.save_user(self.current_user)
+
+        self.rfid.is_green = True
         self.publish_state()
 
     def signout(self):
+        self.pullup_tracker.reset()
+        self.rfid.is_green = False
         self.current_user = None
+        self.enrolling_code = None
+        self.publish_state()
 
     #
     # State
@@ -107,19 +116,21 @@ class MyComponent(ApplicationSession):
             if result:
                 if result == "UP":
                     print "Pullup"
-                    self.rfid.beep_for(0.015)
+                    # self.rfid.beep_for(0.015)
                 elif result == "DOWN":
                     print "Down"
-                    self.rfid.beep_for(0.070)
+                    # self.rfid.beep_for(0.070)
 
                 self.publish_state()
 
             if self.pullup_tracker.idle_time > 5:
                 self.record_pullup_set()
-                self.rfid.beep_for(0.250)
+                # self.rfid.beep_for(0.250)
 
     def record_pullup_set(self):
-        if self.current_user:
+        if self.current_user and self.pullup_tracker.in_set:
+            self.pullup_tracker.in_set = False
+
             self.current_user.records.append(
                 PullupRecord(pullups=self.pullup_tracker.pullups, time_in_set=self.pullup_tracker.time_in_set))
             self.store.save_user(self.current_user)

@@ -48,13 +48,13 @@ class App extends Component {
 
         {this.state.session
           ?
-          <div>
-            <CurrentUser session={this.state.session}
+            [<CurrentUser session={this.state.session}
                          user={this.state.current_user}
                          enroll_mode={this.state.enroll_mode}
-            />
-            {this.state.current_user ? <CurrentPullups data={this.state.pullup} /> : null}
-          </div>
+            />,
+            this.state.current_user ?
+              <CurrentPullups session={this.state.session} data={this.state.pullup} />
+              : null]
           : <h2>Disconnected.</h2>}
       </div>
     );
@@ -65,14 +65,6 @@ export default App;
 
 
 class CurrentUser extends Component {
-  constructor() {
-    super();
-    this.signout = this.signout.bind(this);
-  }
-  signout() {
-    console.log('Sign out');
-    this.props.session.call('pusu.signout');
-  }
   render() {
     if (this.props.user) {
       return (
@@ -93,9 +85,6 @@ class CurrentUser extends Component {
               Best: <span>{this.props.user.best_lifetime}</span>
             </div>
           </div>
-          <div className="CurrentUser__info2">
-            <button className="CurrentUser__signout" onClick={this.signout}>Sign out &raquo;</button>
-          </div>
         </div>
       );
       //<ul>
@@ -112,13 +101,27 @@ class CurrentUser extends Component {
 
 
 class CurrentPullups extends Component {
+  constructor() {
+    super();
+    this.signout = this.signout.bind(this);
+  }
+  signout() {
+    console.log('Sign out');
+    this.props.session.call('pusu.signout');
+  }
+
   render() {
     if (this.props.data) {
       return (
-        <div>
-          <h2>{this.props.data.pullups}</h2>
-          pull-ups done in <h3>{this.props.data.time_since_start.toFixed(1)} seconds</h3>
-          Idle: <h3>{this.props.data.idle_time.toFixed(1)} seconds</h3>
+        <div className="CurrentPullups">
+          <div className="CurrentPullups__content">
+            <div className="CurrentPullups__pullups">{this.props.data.pullups}</div>
+            <div className="CurrentPullups__set-time">{this.props.data.time_since_start.toFixed(1)} sec</div>
+          </div>
+
+          <div className="CurrentPullups__done">
+            <button className="CurrentPullups__done_btn" onClick={this.signout}>Sign out &raquo;</button>
+          </div>
         </div>
       );
     }

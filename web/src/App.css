@@ -1,5 +1,9 @@
 .App {
-  text-align: center;
+    text-align: center;
+
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .App__header {
@@ -25,7 +29,7 @@
 
 .CurrentUser__pfpic-wrap {
     width: 80px;
-    min-width: 80px;
+    flex-shrink: 0;
 }
 .CurrentUser__pfpic {
     max-width: 100%;
@@ -47,14 +51,41 @@
     color: #666;
 }
 
-.CurrentUser__info2 {
+
+.CurrentPullups {
+    flex-grow: 1;
+
+    display: flex;
+    flex-direction: column;
 }
-.CurrentUser__signout {
-    width: 50px;
-    height: 80px;
+.CurrentPullups__content {
+    flex-grow: 1;
+}
+.CurrentPullups__done {
+    display: flex;
+    min-width: 100vw;
+}
+.CurrentPullups__done_btn {
+    flex-grow: 1;
+    margin: 20px;
+
+    height: 64px;
+    font-size: 20px;
     border: none;
-    float: right;
     padding: 20px 10px;
     background-color: #ce4933;
     color: white;
+}
+
+.CurrentPullups {
+
+}
+
+.CurrentPullups__pullups {
+    display: block;
+    font-size: 144px;
+}
+.CurrentPullups__set-time {
+    display: block;
+    font-size: 32px;
 }
