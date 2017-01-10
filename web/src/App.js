@@ -115,8 +115,14 @@ class CurrentPullups extends Component {
       return (
         <div className="CurrentPullups">
           <div className="CurrentPullups__content">
+            <div className={`CurrentPullups__rawBar CurrentPullups__rawBar_${this.props.data.state}`}
+                 style={{height: this.props.data.raw_value / 32768.0 * 1000}}/>
             <div className="CurrentPullups__pullups">{this.props.data.pullups}</div>
-            <div className="CurrentPullups__set-time">{this.props.data.time_since_start.toFixed(1)} sec</div>
+            <div className="CurrentPullups__set-time">{
+              this.props.data.state == 'IDLE'
+              ? this.props.data.time_in_set.toFixed(1)
+              : this.props.data.time_since_start.toFixed(1)
+            } sec</div>
           </div>
 
           <div className="CurrentPullups__done">

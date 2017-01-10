@@ -4,6 +4,7 @@
 # BCM 13 = Data 1
 # BCM 5 = Beeper
 # BCM 6 = Green LED
+import attr
 import simplejson as json
 import os
 import time
@@ -28,14 +29,14 @@ class MyComponent(ApplicationSession):
         self.current_user = None
         self.enrolling_code = None
 
-        self.store = UserStore("users.json")
+        self.store = UserStore(filename="users.json")
         self.store.load()
 
         print "Joined Crossbar"
         self.register(self.get_state, 'pusu.get_state')
         self.register(self.enroll, 'pusu.enroll')
         self.register(self.signout, 'pusu.signout')
-        task.LoopingCall(self.publisher).start(0.5)
+        task.LoopingCall(self.publish_state).start(0.5)
         task.LoopingCall(self.updater).start(0.0)
 
     #
@@ -82,6 +83,8 @@ class MyComponent(ApplicationSession):
         self.publish_state()
 
     def signout(self):
+        if self.pullup_tracker.state != State.IDLE:
+            self.record_pullup_set()
         self.pullup_tracker.reset()
         self.rfid.is_green = False
         self.current_user = None
@@ -102,8 +105,8 @@ class MyComponent(ApplicationSession):
     def publish_state(self):
         self.publish('pusu.state', self.get_state())
 
-    def publisher(self):
-        self.publish_state()
+    def publish_pullup_state(self):
+        self.publish('pusu.state', {"pullup": self.pullup_tracker.jsonable})
 
     #
     # Pullups
@@ -114,27 +117,29 @@ class MyComponent(ApplicationSession):
             result = self.pullup_tracker._sample()
 
             if result:
-                if result == "UP":
+                if result == State.UP:
                     print "Pullup"
                     # self.rfid.beep_for(0.015)
-                elif result == "DOWN":
+                elif result == State.DOWN:
                     print "Down"
                     # self.rfid.beep_for(0.070)
+                elif result == State.IDLE:
+                    print "Set timed out"
+                    self.record_pullup_set()
+                    # self.rfid.beep_for(0.250)
 
-                self.publish_state()
-
-            if self.pullup_tracker.idle_time > 5:
-                self.record_pullup_set()
-                # self.rfid.beep_for(0.250)
+            self.publish_pullup_state()
 
     def record_pullup_set(self):
-        if self.current_user and self.pullup_tracker.in_set:
-            self.pullup_tracker.in_set = False
-
+        if self.current_user:
             self.current_user.records.append(
-                PullupRecord(pullups=self.pullup_tracker.pullups, time_in_set=self.pullup_tracker.time_in_set))
+                PullupRecord(
+                    pullups=self.pullup_tracker.pullups,
+                    time_in_set=self.pullup_tracker.time_in_set))
             self.store.save_user(self.current_user)
-        self.pullup_tracker.reset()
+
+        # User records updated
+        self.publish_state()
 
 
 class State(Enum):
@@ -143,19 +148,26 @@ class State(Enum):
     DOWN = 2
 
 
+@attr.attrs
 class PullupTracker(object):
-    ADC_CHANNEL = 0
-    ADC_SAMPLES_PER_SEC = 8
+    adc = attr.attr(default=attr.Factory(lambda: Adafruit_ADS1x15.ADS1115()))
+    adc_channel = attr.attr(default=0)
     # 1 = +/-4.096V
     # 2 = +/-2.048V
-    ADC_GAIN = 1
+    adc_gain = attr.attr(default=1)
+    adc_samples_per_sec = attr.attr(default=16)
 
-    THRESHOLD_DOWN = 500
-    THRESHOLD_UP = 10000
+    threshold_down = attr.attr(default=500)
+    threshold_up = attr.attr(default=10000)
+    idle_timeout = attr.attr(default=5.0)
 
-    def __init__(self):
-        self.adc = Adafruit_ADS1x15.ADS1115()
-        self.raw_value = 0
+    raw_value = attr.attr(default=0)
+    pullups = attr.attr(default=0)
+    state = attr.attr(default=State.IDLE)
+    start_time = attr.attr(default=None)
+    last_pullup_time = attr.attr(default=None)
+
+    def __attrs_post_init__(self):
         self.reset()
 
     def reset(self):
@@ -195,28 +207,35 @@ class PullupTracker(object):
 
     def _sample(self):
         value = self.adc.read_adc(
-                self.ADC_CHANNEL,
-                gain=self.ADC_GAIN,
-                data_rate=self.ADC_SAMPLES_PER_SEC)
+                self.adc_channel,
+                gain=self.adc_gain,
+                data_rate=self.adc_samples_per_sec)
 
         self.raw_value = value
 
-        print value
+        old_state = self.state
 
         if self.state == State.UP:
-            if self.raw_value < self.THRESHOLD_DOWN:
+            if self.raw_value < self.threshold_down:
                 self.state = State.DOWN
-                return "DOWN"
         else:
-            if self.raw_value > self.THRESHOLD_UP:
-                self.state = State.UP
-                if self.pullups == 0:
-                    self.start_time = time.time()
-                self.pullups += 1
+            if self.raw_value > self.threshold_up:
                 self.last_pullup_time = time.time()
-                return "UP"
+                if self.state == State.IDLE:
+                    # New set started.
+                    self.pullups = 1
+                    self.start_time = self.last_pullup_time
+                    print "new set"
+                else:
+                    self.pullups += 1
+                self.state = State.UP
 
-        return
+            if self.idle_time > self.idle_timeout:
+                self.state = State.IDLE
+
+        if self.state != old_state:
+            return self.state  # Alert caller of state change
+        return None
 
     @property
     def jsonable(self):
@@ -225,7 +244,8 @@ class PullupTracker(object):
             "time_since_start": self.time_since_start,
             "time_in_set": self.time_in_set,
             "idle_time": self.idle_time,
-            # "raw_value": self.raw_value,
+            "state": self.state.name,
+            "raw_value": self.raw_value,
         }
 
 

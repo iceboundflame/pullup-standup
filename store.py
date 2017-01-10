@@ -9,7 +9,7 @@ import simplejson as json
 import tzlocal
 
 
-@attr.attributes
+@attr.attrs
 class PullupRecord(object):
     created_at = attr.attr(default=attr.Factory(
         lambda: datetime.datetime.now(pytz.utc).isoformat()))
@@ -31,7 +31,7 @@ def this_week_start():
     return weekstart
 
 
-@attr.attributes
+@attr.attrs
 class User(object):
     username = attr.attr()
     name = attr.attr()
@@ -97,7 +97,7 @@ class User(object):
         }
 
 
-@attr.attributes
+@attr.attrs
 class UserStore(object):
     filename = attr.attr()
     users = attr.attr(default={})
