@@ -77,20 +77,16 @@ class CurrentUser extends Component {
             <div className="CurrentUser__name">{this.props.user.name}</div>
             <div className="CurrentUser__username">{this.props.user.username}</div>
             <div className="CurrentUser__record">
-              Week: <span>{this.props.user.total_this_week}</span> |
-              Best: <span>{this.props.user.best_this_week}</span>
+              This week: <span>{this.props.user.total_this_week}</span> |
+              Record: <span>{this.props.user.best_this_week}</span>
             </div>
             <div className="CurrentUser__record">
-              Total: <span>{this.props.user.total_lifetime}</span> |
-              Best: <span>{this.props.user.best_lifetime}</span>
+              Total ever: <span>{this.props.user.total_lifetime}</span> |
+              Record: <span>{this.props.user.best_lifetime}</span>
             </div>
           </div>
         </div>
       );
-      //<ul>
-      //  {this.props.user.records.map(record =>
-      //    <li key={record.created_at}>{record.pullups} @ {record.created_at}</li>)}
-      //</ul>
     } else if (this.props.enroll_mode) {
       return <Enrollment session={this.props.session} />;
     } else {
@@ -133,13 +129,13 @@ class CurrentPullups extends Component {
           <div className="CurrentPullups__done">
             { this.props.data.state == 'IDLE'
               ?
-              <button className="CurrentPullups__done_btn CurrentPullups__done_btn_signout" onClick={this.signout}>Sign out &raquo;</button>
+              <div className="CurrentPullups__done_btn CurrentPullups__done_btn_signout" onClick={this.signout}>Sign out &raquo;</div>
               :
-              <button className="CurrentPullups__done_btn CurrentPullups__done_btn_end_set" onClick={this.endSet}>
+              <div className="CurrentPullups__done_btn CurrentPullups__done_btn_end_set" onClick={this.endSet}>
                 <div className="CurrentPullups__done_btn__countdown"
                      style={{width: (1 - this.props.data.idle_time_percent) * 100 + '%'}} />
                 <div>Finish set &raquo;</div>
-              </button>
+              </div>
             }
           </div>
         </div>
