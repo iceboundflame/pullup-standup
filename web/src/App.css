@@ -64,23 +64,13 @@
 }
 .CurrentPullups__content {
     flex-grow: 1;
+
+    position: relative;  /* for rawBar */
 }
+
 .CurrentPullups__done {
     display: flex;
     min-width: 100vw;
-}
-.CurrentPullups__rawBar {
-    width:10px;
-    position: absolute;
-}
-.CurrentPullups__rawBar_IDLE {
-    background: red;
-}
-.CurrentPullups__rawBar_DOWN {
-    background: orange;
-}
-.CurrentPullups__rawBar_UP {
-    background: green;
 }
 .CurrentPullups__done_btn {
     flex-grow: 1;
@@ -90,12 +80,24 @@
     font-size: 20px;
     border: none;
     padding: 20px 10px;
+}
+.CurrentPullups__done_btn_signout {
     background-color: #ce4933;
     color: white;
 }
+.CurrentPullups__done_btn_end_set {
+    background-color: #395bce;
+    color: white;
 
-.CurrentPullups {
+    position: relative;  /* for countdown bar */
+}
+.CurrentPullups__done_btn__countdown {
+    position: absolute;
+    top: 0;
+    left: 0;
 
+    height: 10px;
+    background-color: #87a6ce;
 }
 
 .CurrentPullups__pullups {
@@ -105,4 +107,21 @@
 .CurrentPullups__set-time {
     display: block;
     font-size: 32px;
+}
+
+
+.CurrentPullups__rawBar {
+    width:10px;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.CurrentPullups__rawBar_IDLE {
+    background: red;
+}
+.CurrentPullups__rawBar_DOWN {
+    background: orange;
+}
+.CurrentPullups__rawBar_UP {
+    background: green;
 }

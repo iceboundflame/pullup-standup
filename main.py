@@ -35,6 +35,7 @@ class MyComponent(ApplicationSession):
         print "Joined Crossbar"
         self.register(self.get_state, 'pusu.get_state')
         self.register(self.enroll, 'pusu.enroll')
+        self.register(self.end_set, 'pusu.end_set')
         self.register(self.signout, 'pusu.signout')
         task.LoopingCall(self.publish_state).start(0.5)
         task.LoopingCall(self.updater).start(0.0)
@@ -112,6 +113,11 @@ class MyComponent(ApplicationSession):
     # Pullups
     #
 
+    def end_set(self):
+        if self.pullup_tracker.state != State.IDLE:
+            self.pullup_tracker.state = State.IDLE
+            self.record_pullup_set()
+
     def updater(self):
         if self.current_user:
             result = self.pullup_tracker._sample()
@@ -159,7 +165,7 @@ class PullupTracker(object):
 
     threshold_down = attr.attr(default=500)
     threshold_up = attr.attr(default=10000)
-    idle_timeout = attr.attr(default=5.0)
+    idle_timeout = attr.attr(default=20.0)
 
     raw_value = attr.attr(default=0)
     pullups = attr.attr(default=0)
@@ -244,6 +250,7 @@ class PullupTracker(object):
             "time_since_start": self.time_since_start,
             "time_in_set": self.time_in_set,
             "idle_time": self.idle_time,
+            "idle_time_percent": self.idle_time / self.idle_timeout,
             "state": self.state.name,
             "raw_value": self.raw_value,
         }

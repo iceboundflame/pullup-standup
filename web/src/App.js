@@ -103,7 +103,12 @@ class CurrentUser extends Component {
 class CurrentPullups extends Component {
   constructor() {
     super();
+    this.endSet = this.endSet.bind(this);
     this.signout = this.signout.bind(this);
+  }
+  endSet() {
+    console.log('End set');
+    this.props.session.call('pusu.end_set');
   }
   signout() {
     console.log('Sign out');
@@ -116,7 +121,7 @@ class CurrentPullups extends Component {
         <div className="CurrentPullups">
           <div className="CurrentPullups__content">
             <div className={`CurrentPullups__rawBar CurrentPullups__rawBar_${this.props.data.state}`}
-                 style={{height: this.props.data.raw_value / 32768.0 * 1000}}/>
+                 style={{height: this.props.data.raw_value / 32768.0 * 100 + '%'}}/>
             <div className="CurrentPullups__pullups">{this.props.data.pullups}</div>
             <div className="CurrentPullups__set-time">{
               this.props.data.state == 'IDLE'
@@ -126,7 +131,16 @@ class CurrentPullups extends Component {
           </div>
 
           <div className="CurrentPullups__done">
-            <button className="CurrentPullups__done_btn" onClick={this.signout}>Sign out &raquo;</button>
+            { this.props.data.state == 'IDLE'
+              ?
+              <button className="CurrentPullups__done_btn CurrentPullups__done_btn_signout" onClick={this.signout}>Sign out &raquo;</button>
+              :
+              <button className="CurrentPullups__done_btn CurrentPullups__done_btn_end_set" onClick={this.endSet}>
+                <div className="CurrentPullups__done_btn__countdown"
+                     style={{width: (1 - this.props.data.idle_time_percent) * 100 + '%'}} />
+                <div>Finish set &raquo;</div>
+              </button>
+            }
           </div>
         </div>
       );
