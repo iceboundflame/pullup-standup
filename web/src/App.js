@@ -15,12 +15,14 @@ class App extends Component {
       max_retry_delay: 10,
     });
 
+    const maxRawLog = 500;
+
     this.state = {
       'session': null,
       'pullup': null,
       'current_user': null,
       'enroll_mode': false,
-      'raw_log': [],
+      'raw_log': new Array(maxRawLog).fill(0),
     };
 
     this.connection.onopen = (session, details) => {
@@ -33,7 +35,7 @@ class App extends Component {
 
         if (e[0].pullup) {
           this.setState((state) => {
-            state.raw_log = state.raw_log.concat([e[0].pullup.raw_value]).slice(-5000);
+            state.raw_log = state.raw_log.concat([e[0].pullup.raw_value]).slice(-maxRawLog);
           });
         }
       });
@@ -111,10 +113,10 @@ const DebugScreen = ({state}) => {
   };
   const options = {
     scales: {
-      xAxes: [{
-        display: false
-      }]
-    }
+      xAxes: [{display: false}],
+    },
+    tooltips: {enabled: false},
+    animation: false,
   };
   return <div>
     <LineChart data={data} options={options} />
