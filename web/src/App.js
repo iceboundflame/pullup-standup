@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import autobahn from 'autobahn';
 import './App.css';
-import { Line as LineChart } from 'react-chartjs-2';
-import { HashRouter, Match, Link } from 'react-router'
+//import { Line as LineChart } from 'react-chartjs-2';
+import { HashRouter, Match, Link } from 'react-router';
+import Dygraph from 'infinidat-react-dygraphs';
 
 class App extends Component {
   constructor() {
@@ -15,14 +16,15 @@ class App extends Component {
       max_retry_delay: 10,
     });
 
-    const maxRawLog = 500;
+    const maxRawLog = 2000;
+    var nextIdx = maxRawLog;
 
     this.state = {
       'session': null,
       'pullup': null,
       'current_user': null,
       'enroll_mode': false,
-      'raw_log': new Array(maxRawLog).fill(0),
+      'raw_log': Array(maxRawLog).fill().map((_, i) => [i, i]),
     };
 
     this.connection.onopen = (session, details) => {
@@ -35,7 +37,11 @@ class App extends Component {
 
         if (e[0].pullup) {
           this.setState((state) => {
-            state.raw_log = state.raw_log.concat([e[0].pullup.raw_value]).slice(-maxRawLog);
+            state.raw_log = state.raw_log.concat(
+              [[nextIdx, e[0].pullup.raw_value]]
+            ).slice(-maxRawLog);
+            console.log(state.raw_log);
+            nextIdx++;
           });
         }
       });
@@ -84,42 +90,10 @@ const KioskScreen = ({state}) => (
 );
 
 const DebugScreen = ({state}) => {
-  const vals = state.raw_log;
-  const data = {
-    labels: [...Array(vals.length).keys()],
-    datasets: [
-      {
-        label: 'raw sensor value',
-        fill: false,
-        lineTension: 0.1,
-        //backgroundColor: 'rgba(75,192,192,0.4)',
-        //borderColor: 'rgba(75,192,192,1)',
-        //borderCapStyle: 'butt',
-        //borderDash: [],
-        //borderDashOffset: 0.0,
-        //borderJoinStyle: 'miter',
-        //pointBorderColor: 'rgba(75,192,192,1)',
-        //pointBackgroundColor: '#fff',
-        //pointBorderWidth: 1,
-        //pointHoverRadius: 5,
-        //pointHoverBackgroundColor: 'rgba(75,192,192,1)',
-        //pointHoverBorderColor: 'rgba(220,220,220,1)',
-        //pointHoverBorderWidth: 2,
-        //pointRadius: 1,
-        //pointHitRadius: 10,
-        data: vals,
-      }
-    ]
-  };
-  const options = {
-    scales: {
-      xAxes: [{display: false}],
-    },
-    tooltips: {enabled: false},
-    animation: false,
-  };
+  //rollPeriod={10}
   return <div>
-    <LineChart data={data} options={options} />
+    <Dygraph data={state.raw_log}
+    />
     <div className="CurrentPullups__pullups">
       {state.pullup && state.pullup.raw_value}</div>
   </div>;

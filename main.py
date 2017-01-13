@@ -126,9 +126,9 @@ class MyComponent(ApplicationSession):
             self.record_pullup_set()
 
     def updater(self):
-        if self.current_user:
-            result = self.pullup_tracker._sample()
+        result = self.pullup_tracker._sample()
 
+        if self.current_user:
             if result:
                 if result == State.UP:
                     print "Pullup"
@@ -140,7 +140,7 @@ class MyComponent(ApplicationSession):
                     print "Set timed out"
                     self.record_pullup_set()
 
-            self.publish_pullup_state()
+        self.publish_pullup_state()
 
     def record_pullup_set(self):
         if self.current_user:
