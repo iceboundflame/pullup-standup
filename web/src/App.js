@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import autobahn from 'autobahn';
 import './App.css';
+import { Line as LineChart } from 'react-chartjs-2';
 
 class App extends Component {
   constructor() {
@@ -8,7 +9,6 @@ class App extends Component {
 
     this.connection = new autobahn.Connection({
       url: `ws://${window.location.host}/ws`,
-      //url: `ws://raspberrypi.local:8080/ws`,
       realm: 'realm1',
       max_retries: -1,  // unlimited
       max_retry_delay: 10,
@@ -19,6 +19,7 @@ class App extends Component {
       'pullup': null,
       'current_user': null,
       'enroll_mode': false,
+      'raw_log': [],
     };
 
     this.connection.onopen = (session, details) => {
@@ -26,7 +27,14 @@ class App extends Component {
 
       session.subscribe("pusu.state", (e) => {
         console.log("pusu.state", e[0]);
+
         this.setState(e[0]);
+
+        if (e[0].pullup) {
+          this.setState((state) => {
+            state.raw_log = state.raw_log.concat([e[0].pullup.raw_value]).slice(-5000);
+          });
+        }
       });
 
       session.call("pusu.get_state").then((e) => {
@@ -42,20 +50,60 @@ class App extends Component {
   }
 
   render() {
+    const vals = this.state.raw_log;
+    const data = {
+      labels: [...Array(vals.length).keys()],
+      datasets: [
+        {
+          label: 'raw sensor value',
+          fill: false,
+          lineTension: 0.1,
+          //backgroundColor: 'rgba(75,192,192,0.4)',
+          //borderColor: 'rgba(75,192,192,1)',
+          //borderCapStyle: 'butt',
+          //borderDash: [],
+          //borderDashOffset: 0.0,
+          //borderJoinStyle: 'miter',
+          //pointBorderColor: 'rgba(75,192,192,1)',
+          //pointBackgroundColor: '#fff',
+          //pointBorderWidth: 1,
+          //pointHoverRadius: 5,
+          //pointHoverBackgroundColor: 'rgba(75,192,192,1)',
+          //pointHoverBorderColor: 'rgba(220,220,220,1)',
+          //pointHoverBorderWidth: 2,
+          //pointRadius: 1,
+          //pointHitRadius: 10,
+          data: vals,
+        }
+      ]
+    };
+    const options = {
+        scales: {
+            xAxes: [{
+                display: false
+            }]
+        }
+    };
+    //<LineChart data={data} options={options} />
+    //<div className="CurrentPullups__pullups">
+    //  {this.props.data.raw_value}</div>
+
     return (
       <div className="App">
         <header className="App__header">Pullup Standup</header>
 
-        {this.state.session
-          ?
-            [<CurrentUser session={this.state.session}
-                         user={this.state.current_user}
-                         enroll_mode={this.state.enroll_mode}
-            />,
-            this.state.current_user ?
-              <CurrentPullups session={this.state.session} data={this.state.pullup} />
-              : null]
-          : <h2>Disconnected.</h2>}
+        {
+          this.state.session
+            ? [
+              <CurrentUser session={this.state.session}
+                           user={this.state.current_user}
+                           enroll_mode={this.state.enroll_mode} />,
+              this.state.current_user &&
+                <CurrentPullups session={this.state.session} data={this.state.pullup}
+                  raw_log={this.state.raw_log} />,
+            ]
+            : <h2>Disconnected.</h2>
+        }
       </div>
     );
   }

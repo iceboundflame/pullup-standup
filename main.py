@@ -32,11 +32,18 @@ class MyComponent(ApplicationSession):
         self.store = UserStore(filename="users.json")
         self.store.load()
 
+        self.pullup_tracker.threshold_up = self.store.threshold_up
+        self.pullup_tracker.threshold_down = self.store.threshold_down
+        print "Thresholds:",\
+            self.pullup_tracker.threshold_up,\
+            self.pullup_tracker.threshold_down
+
         print "Joined Crossbar"
         self.register(self.get_state, 'pusu.get_state')
         self.register(self.enroll, 'pusu.enroll')
         self.register(self.end_set, 'pusu.end_set')
         self.register(self.signout, 'pusu.signout')
+        self.register(self.set_threshold, 'pusu.set_threshold')
         task.LoopingCall(self.publish_state).start(0.5)
         task.LoopingCall(self.updater).start(0.0)
 
@@ -125,14 +132,13 @@ class MyComponent(ApplicationSession):
             if result:
                 if result == State.UP:
                     print "Pullup"
-                    # self.rfid.beep_for(0.015)
+                    self.rfid.beep_for(0.015)
                 elif result == State.DOWN:
                     print "Down"
-                    # self.rfid.beep_for(0.070)
+                    self.rfid.beep_for(0.070)
                 elif result == State.IDLE:
                     print "Set timed out"
                     self.record_pullup_set()
-                    # self.rfid.beep_for(0.250)
 
             self.publish_pullup_state()
 
@@ -144,8 +150,18 @@ class MyComponent(ApplicationSession):
                     time_in_set=self.pullup_tracker.time_in_set))
             self.store.save_user(self.current_user)
 
+            # self.rfid.beep_for(0.250)
+
         # User records updated
         self.publish_state()
+
+    def set_threshold(self, up, down):
+        self.pullup_tracker.threshold_up = up
+        self.pullup_tracker.threshold_down = down
+
+        self.store.threshold_up = up
+        self.store.threshold_down = down
+        self.store.save()
 
 
 class State(Enum):
@@ -163,8 +179,8 @@ class PullupTracker(object):
     adc_gain = attr.attr(default=1)
     adc_samples_per_sec = attr.attr(default=16)
 
-    threshold_down = attr.attr(default=500)
-    threshold_up = attr.attr(default=10000)
+    threshold_up = attr.attr(default=9000)
+    threshold_down = attr.attr(default=1200)
     idle_timeout = attr.attr(default=20.0)
 
     raw_value = attr.attr(default=0)

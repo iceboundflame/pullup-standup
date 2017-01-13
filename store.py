@@ -102,6 +102,9 @@ class UserStore(object):
     filename = attr.attr()
     users = attr.attr(default={})
 
+    threshold_up = attr.attr(default=9000)
+    threshold_down = attr.attr(default=1200)
+
     def get_user(self, username):
         return self.users.get(username)
 
@@ -118,10 +121,61 @@ class UserStore(object):
     def load(self):
         try:
             with open(self.filename) as fh:
-                self.users = {k: User(**u) for k, u in json.load(fh).items()}
+                obj = json.load(fh)
+                self.users = {k: User(**u) for k, u in obj.get('users').items()}
+                self.threshold_up = obj.get('threshold_up')
+                self.threshold_down = obj.get('threshold_down')
         except Exception as e:
             print "Couldn't open", self.filename, e
+            # raise
 
     def save(self):
         with open(self.filename, "w") as fh:
-            json.dump({k: attr.asdict(u) for k, u in self.users.items()}, fh)
+            json.dump(self.jsonable, fh)
+
+    @property
+    def jsonable(self):
+        return {
+            'users': {k: attr.asdict(u) for k, u in self.users.items()},
+            'threshold_up': self.threshold_up,
+            'threshold_down': self.threshold_down,
+        }
+
+    def compute_leaders(self):
+        for u in self.users.values():
+            u.total_this_week
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
+# user_id =>
+#  lifetime_total
+#  record
+#  r
+#  record.ts  # blob of raw time series
+#
+

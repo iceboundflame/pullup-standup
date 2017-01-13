@@ -6,9 +6,11 @@
     "react-scripts": "0.8.4"
   },
   "dependencies": {
+    "autobahn": "^0.10.1",
+    "chart.js": "^2.4.0",
     "react": "^15.4.2",
-    "react-dom": "^15.4.2",
-    "autobahn": "^0.10.1"
+    "react-chartjs-2": "^2.0.0",
+    "react-dom": "^15.4.2"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -16,5 +18,6 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
-  "proxy": "http://raspberrypi.local:8080/"
+  "xxproxy": "http://raspberrypi.local:8080/",
+  "proxy": "http://localhost:8080/"
 }
