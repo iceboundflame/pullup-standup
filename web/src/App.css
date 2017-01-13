@@ -16,6 +16,10 @@
   padding: 8px 0 8px 0;
   font-weight: bold;
 }
+.App__header a {
+    color: white;
+    text-decoration: none;
+}
 
 
 .CurrentUser__signedout {
