@@ -10,7 +10,8 @@ Group=pi
 StandardInput=null
 StandardOutput=journal
 StandardError=journal
-ExecStart=/home/pi/venv/bin/python /home/pi/sw/main.py
+Environment="PYTHONPATH=."
+ExecStart=/home/pi/venv/bin/python /home/pi/sw/pullup/main.py
 WorkingDirectory=/home/pi/sw
 StartLimitInterval=0
 Restart=always

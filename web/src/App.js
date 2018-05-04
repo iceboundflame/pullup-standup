@@ -72,6 +72,9 @@ class App extends Component {
                render={props => <KioskScreen {...props} state={this.state} />} />
         <Route exactly pattern="/debug"
                render={props => <DebugScreen {...props} state={this.state} />} />
+
+        <Route exactly pattern="/leaders"
+               render={props => <LeaderScreen {...props} session={this.state.session} />} />
       </div>
       </HashRouter>
     );
@@ -91,7 +94,6 @@ const KioskScreen = ({state}) => (
 );
 
 const DebugScreen = ({state}) => {
-  //rollPeriod={10}
   return <div>
     <Dygraph data={state.raw_log}
     />
@@ -221,5 +223,67 @@ class Enrollment extends Component {
           </form>
         </div>
     );
+  }
+}
+
+class LeaderScreen extends Component {
+  constructor() {
+    super();
+    this.state = {
+      leaders: null,
+    };
+  }
+
+  componentDidMount() {
+    this.getLeaders(this.props.session);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (!this.props.session && nextProps.session) {
+      this.getLeaders(nextProps.session);
+    }
+  }
+
+  getLeaders(session) {
+    if (session) {
+      session.call('pusu.get_leaders').then((result) => {
+        this.setState({
+          leaders: result.leaders,
+        });
+      });
+    }
+  }
+
+  render() {
+    if (this.state.leaders) {
+      const leaderItems = this.state.leaders.map((u) =>
+        <div>
+          <div className="CurrentUser__pfpic-wrap">
+            <img src={u.pfpic || "http://placehold.it/200x200"}
+                 className="CurrentUser__pfpic" />
+          </div>
+          <div className="CurrentUser__info">
+            <div className="CurrentUser__name">{u.name}</div>
+            <div className="CurrentUser__username">{u.username}</div>
+            <div className="CurrentUser__record">
+              This week: <span>{u.total_this_week}</span> |
+              Record: <span>{u.best_this_week}</span>
+            </div>
+            <div className="CurrentUser__record">
+              Total ever: <span>{u.total_lifetime}</span> |
+              Record: <span>{u.best_lifetime}</span>
+            </div>
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="LeaderScreen">
+          {leaderItems}
+        </div>
+      );
+    } else {
+      return <div className="LeaderScreen">Loading...</div>;
+    }
   }
 }

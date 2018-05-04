@@ -141,35 +141,10 @@ class UserStore(object):
             'threshold_down': self.threshold_down,
         }
 
-    def compute_leaders(self):
-        for u in self.users.values():
-            u.total_this_week
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def compute_leaders(self, top_n=10):
+        return {
+            'leaders': list(sorted(self.users.values(), key=lambda u: u.total_7d, reverse=True)[:top_n]),
+        }
 
 #
 # user_id =>
@@ -178,4 +153,3 @@ class UserStore(object):
 #  r
 #  record.ts  # blob of raw time series
 #
-
