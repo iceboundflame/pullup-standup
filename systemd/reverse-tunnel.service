@@ -7,9 +7,9 @@ After=network.target
 User=pi
 ExecStart=/usr/bin/ssh -NTC -o ServerAliveInterval=10 -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no -R 10101:localhost:8080 -R 10102:localhost:22 pintunnel@iceboundflame.com
 
-# Restart every >2 seconds to avoid StartLimitInterval failure
-RestartSec=3
+StartLimitInterval=0
 Restart=always
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target

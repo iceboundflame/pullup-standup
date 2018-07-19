@@ -28,22 +28,37 @@ UI (React single-page webapp)
 
 ## Development workflow
 
-    ssh pi@raspberrypi.local
+
+Initial setup on dev host (laptop)
+
+    # Set up "pullup" in .ssh/config with proper tunneling.
+    <omitted>
+
+    # Install npm packages for dev environment.
+    (cd web && npm install)
 
     # Continually rsync into ~/sw
-    watchman -- trigger ~/codex/pullup pullup -- bash -c "rsync -av --delete ~/codex/pullup/ pi@raspberrypi.local:sw/ --exclude pigpio --exclude users.json"
+    watchman -- trigger ~/Dropbox/codex/pullup pullup -- bash -c "rsync -av --delete ~/Dropbox/codex/pullup/ pullup:sw/ --exclude pigpio --exclude users.json --exclude .*.swp"
+
+
+Typical edit-build cycle:
+
+    # Rebuild, will be rsynced by watchman
+    (cd web && npm run build)
+
+
+On-device setup:
+
+    ssh pullup
 
     # Build & install pigpiod, then
     sudo systemctl enable pigpiod
 
-    # Continually re-bundle JS into web/dist/, will be rsynced by watchman
-    cd web && webpack --watch (on host)
-
     # crossbar is config'd by ~/sw/.crossbar/config.json
     # crossbar serves static files from ~/sw/web/dist
     # "pullup" : Python Twisted server - connects to crossbar.
-    sudo cp ~/sw/systemd/crossbar.service /lib/systemd/system/
-    sudo ln -sf /home/pi/sw/systemd/* /lib/systemd/system/
+    sudo cp /home/pi/sw/systemd/* /lib/systemd/system/
+
     sudo systemctl enable crossbar pullup pigpiod
     sudo systemctl start pullup
 
@@ -54,6 +69,7 @@ UI (React single-page webapp)
     vi .config/lxsession/LXDE-pi/autostart
     # add:
     @/home/pi/sw/start-kiosk
+
 
 
 ## BOM
