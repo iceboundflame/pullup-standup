@@ -141,9 +141,11 @@ class UserStore(object):
             'threshold_down': self.threshold_down,
         }
 
-    def compute_leaders(self, top_n=10):
+    def compute_leaders(self, top_n=8):
+        leaders_objs = list(sorted(self.users.values(), key=lambda u: u.total_7d, reverse=True)[:top_n])
+        leaders_objs = filter(lambda u: u.total_7d > 0, leaders_objs)
         return {
-            'leaders': list(sorted(self.users.values(), key=lambda u: u.total_7d, reverse=True)[:top_n]),
+            'leaders': map(lambda u: u.jsonable, leaders_objs),
         }
 
 #

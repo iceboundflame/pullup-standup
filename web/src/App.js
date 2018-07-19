@@ -41,7 +41,7 @@ class App extends Component {
             state.raw_log = state.raw_log.concat(
               [[nextIdx, e[0].pullup.raw_value]]
             ).slice(-maxRawLog);
-            console.log(state.raw_log);
+            // console.log(state.raw_log);
             nextIdx++;
           });
         }
@@ -68,13 +68,12 @@ class App extends Component {
           <Link to="/debug" style={{float:'right'}}>[dbg]</Link>
         </header>
 
-        <Route exactly pattern="/"
+        {/*<Route exact path="/"*/}
+               {/*render={props => <LeaderScreen {...props} session={this.state.session} />} />*/}
+        <Route exact path="/"
                render={props => <KioskScreen {...props} state={this.state} />} />
-        <Route exactly pattern="/debug"
+        <Route exact path="/debug"
                render={props => <DebugScreen {...props} state={this.state} />} />
-
-        <Route exactly pattern="/leaders"
-               render={props => <LeaderScreen {...props} session={this.state.session} />} />
       </div>
       </HashRouter>
     );
@@ -112,6 +111,7 @@ class CurrentUser extends Component {
         <div className="CurrentUser">
           <div className="CurrentUser__pfpic-wrap">
             <img src={this.props.user.pfpic || "http://placehold.it/200x200"}
+                 alt="profile pic"
                  className="CurrentUser__pfpic" />
           </div>
           <div className="CurrentUser__info">
@@ -131,7 +131,8 @@ class CurrentUser extends Component {
     } else if (this.props.enroll_mode) {
       return <Enrollment session={this.props.session} />;
     } else {
-      return <div className="CurrentUser__signedout">Tap your badge to play!</div>;
+      //return <div className="CurrentUser__signedout">Tap your badge to play!</div>;
+      return <LeaderScreen session={this.props.session} />;
     }
   }
 }
@@ -161,14 +162,14 @@ class CurrentPullups extends Component {
                  style={{height: this.props.data.raw_value / 32768.0 * 100 + '%'}}/>
             <div className="CurrentPullups__pullups">{this.props.data.pullups}</div>
             <div className="CurrentPullups__set-time">{
-              this.props.data.state == 'IDLE'
+              this.props.data.state === 'IDLE'
               ? this.props.data.time_in_set.toFixed(1)
               : this.props.data.time_since_start.toFixed(1)
             } sec</div>
           </div>
 
           <div className="CurrentPullups__done">
-            { this.props.data.state == 'IDLE'
+            { this.props.data.state === 'IDLE'
               ?
               <div className="CurrentPullups__done_btn CurrentPullups__done_btn_signout" onClick={this.signout}>Sign out &raquo;</div>
               :
@@ -258,20 +259,11 @@ class LeaderScreen extends Component {
     if (this.state.leaders) {
       const leaderItems = this.state.leaders.map((u) =>
         <div>
-          <div className="CurrentUser__pfpic-wrap">
-            <img src={u.pfpic || "http://placehold.it/200x200"}
-                 className="CurrentUser__pfpic" />
-          </div>
           <div className="CurrentUser__info">
-            <div className="CurrentUser__name">{u.name}</div>
-            <div className="CurrentUser__username">{u.username}</div>
+            <div className="CurrentUser__name">{u.username}</div>
             <div className="CurrentUser__record">
-              This week: <span>{u.total_this_week}</span> |
-              Record: <span>{u.best_this_week}</span>
-            </div>
-            <div className="CurrentUser__record">
-              Total ever: <span>{u.total_lifetime}</span> |
-              Record: <span>{u.best_lifetime}</span>
+              Total: <span>{u.total_this_week}</span> |
+              Best: <span>{u.best_this_week}</span>
             </div>
           </div>
         </div>
@@ -279,6 +271,7 @@ class LeaderScreen extends Component {
 
       return (
         <div className="LeaderScreen">
+          <h2>Last 7 Days</h2>
           {leaderItems}
         </div>
       );
