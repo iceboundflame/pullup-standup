@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import autobahn from 'autobahn';
 import './App.css';
 //import { Line as LineChart } from 'react-chartjs-2';
-import { HashRouter, Match, Link } from 'react-router';
+import { Route } from 'react-router';
+import { HashRouter, Link } from 'react-router-dom';
 import Dygraph from 'infinidat-react-dygraphs';
 
 class App extends Component {
@@ -67,9 +68,9 @@ class App extends Component {
           <Link to="/debug" style={{float:'right'}}>[dbg]</Link>
         </header>
 
-        <Match exactly pattern="/"
+        <Route exactly pattern="/"
                render={props => <KioskScreen {...props} state={this.state} />} />
-        <Match exactly pattern="/debug"
+        <Route exactly pattern="/debug"
                render={props => <DebugScreen {...props} state={this.state} />} />
       </div>
       </HashRouter>

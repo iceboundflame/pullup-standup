@@ -3,16 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "devDependencies": {
-    "react-scripts": "0.8.4"
+    "react-scripts": "1.1.4"
   },
   "dependencies": {
-    "autobahn": "^0.10.1",
+    "autobahn": "^18.3.2",
     "chart.js": "^2.4.0",
     "infinidat-react-dygraphs": "0.0.4",
+    "npm": "^6.2.0",
     "react": "^15.4.2",
     "react-chartjs-2": "^2.0.0",
     "react-dom": "^15.4.2",
-    "react-router": "^4.0.0-alpha.6"
+    "react-router": "^4.0.0-alpha.6",
+    "react-router-dom": "^4.3.1"
   },
   "scripts": {
     "start": "react-scripts start",
