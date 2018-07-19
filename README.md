@@ -41,9 +41,20 @@ Initial setup on dev host (laptop)
     watchman -- trigger ~/Dropbox/codex/pullup pullup -- bash -c "rsync -av --delete ~/Dropbox/codex/pullup/ pullup:sw/ --exclude pigpio --exclude users.json --exclude .*.swp"
 
 
-Typical edit-build cycle:
+Development environment:
 
-    # Rebuild, will be rsynced by watchman
+    # FIRST, Make sure localhost:8080 proxies to rpi's 8080 (via ssh tunnel)
+    #   .ssh/config:        LocalForward 8080 localhost:8080
+    #   or command line:    -L8080:localhost:8080
+    # because package.json "proxy" proxies /ws to localhost:8080
+
+    # Start a dev server. Viewable on localhost:3000
+    (cd web && npm start)
+
+
+Deploy to device:
+
+    # Build a prod build, will be rsynced by watchman
     (cd web && npm run build)
 
 
