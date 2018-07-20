@@ -14,6 +14,7 @@ from twisted.internet import task
 
 from pullup.hw import PullupTracker, RfidReader, State
 from pullup.store import UserStore, User, PullupRecord
+from pullup import slack
 
 
 class MyComponent(ApplicationSession):
@@ -41,6 +42,8 @@ class MyComponent(ApplicationSession):
         self.register(self.enroll, 'pusu.enroll')
         self.register(self.end_set, 'pusu.end_set')
         self.register(self.signout, 'pusu.signout')
+        self.register(self.refresh_user_profile, 'pusu.refresh_user_profile')
+        self.register(self.set_username, 'pusu.set_username')
         self.register(self.set_threshold, 'pusu.set_threshold')
         self.register(self.get_leaders, 'pusu.get_leaders')
         task.LoopingCall(self.publish_state).start(0.5)
@@ -68,6 +71,21 @@ class MyComponent(ApplicationSession):
 
         self.publish_state()
 
+    def refresh_user_profile(self):
+        if self.current_user:
+            slack.refresh_user_from_slack(self.current_user)
+            self.store.save_user(self.current_user)
+            self.publish_state()
+
+    def set_username(self, new_username):
+        if self.current_user and self.current_user.username != new_username:
+            if self.store.get_user(new_username):
+                raise ValueError("Username already exists")
+
+            self.current_user.username = new_username
+            slack.refresh_user_from_slack(self.current_user)
+            self.store.save_user(self.current_user)
+
     def enroll(self, username):
         if not self.enrolling_code:
             return
@@ -80,10 +98,11 @@ class MyComponent(ApplicationSession):
         if self.current_user:
             print "Adding badge code to user", self.current_user
         else:
-            self.current_user = User(username, "User " + username)
+            self.current_user = User(username, username)
             print "Creating new user", self.current_user
-
         self.current_user.badge_codes.append(self.enrolling_code)
+
+        slack.refresh_user_from_slack(self.current_user)
         self.store.save_user(self.current_user)
 
         self.rfid.is_green = True
@@ -143,11 +162,13 @@ class MyComponent(ApplicationSession):
 
     def record_pullup_set(self):
         if self.current_user:
-            self.current_user.records.append(
-                PullupRecord(
+            record = PullupRecord(
                     pullups=self.pullup_tracker.pullups,
-                    time_in_set=self.pullup_tracker.time_in_set))
+                    time_in_set=self.pullup_tracker.time_in_set)
+            self.current_user.records.append(record)
             self.store.save_user(self.current_user)
+
+            slack.post_set(self.current_user, record)
 
             # self.rfid.beep_for(0.250)
 

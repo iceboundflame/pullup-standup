@@ -36,6 +36,7 @@ class User(object):
     username = attr.attr()
     name = attr.attr()
     pfpic = attr.attr(default=None)
+    slackid = attr.attr(default=None)
     badge_codes = attr.attr(default=attr.Factory(list))
     records = attr.attr(
         default=[],
@@ -68,8 +69,10 @@ class User(object):
 
     def stats_since(self, start):
         best, total = 0, 0
-        for r in self.records:
-            if not start or r.created_at_dt > start:
+        for r in reversed(self.records):
+            if start and r.created_at_dt < start:
+                break
+            else:
                 best = max(best, r.pullups)
                 total += r.pullups
         return best, total
@@ -87,6 +90,7 @@ class User(object):
             "username": self.username,
             "name": self.name,
             "pfpic": self.pfpic,
+            "slackid": self.slackid,
             "records": [attr.asdict(r) for r in self.records],
             "best_lifetime": self.best_lifetime,
             "best_7d": self.best_7d,
@@ -142,10 +146,12 @@ class UserStore(object):
         }
 
     def compute_leaders(self, top_n=8):
-        leaders_objs = list(sorted(self.users.values(), key=lambda u: u.total_7d, reverse=True)[:top_n])
-        leaders_objs = filter(lambda u: u.total_7d > 0, leaders_objs)
+        leaders_objs = map(lambda u: (u.total_this_week, u), self.users.values())
+        leaders_objs = filter(lambda (cnt, u): cnt > 0, leaders_objs)
+        leaders_objs = list(sorted(leaders_objs, key=lambda (cnt, u): cnt, reverse=True)[:top_n])
+        # TODO: ties?
         return {
-            'leaders': map(lambda u: u.jsonable, leaders_objs),
+            'leaders': map(lambda (cnt, u): u.jsonable, leaders_objs),
         }
 
 #

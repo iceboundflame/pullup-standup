@@ -105,11 +105,20 @@ export default App;
 
 
 class CurrentUser extends Component {
+  constructor() {
+    super();
+    this.refreshUserProfile = this.refreshUserProfile.bind(this);
+  }
+  refreshUserProfile(event) {
+    console.log('Refreshing user profile');
+    this.props.session.call('pusu.refresh_user_profile');
+    event.preventDefault();
+  }
   render() {
     if (this.props.user) {
       return (
         <div className="CurrentUser">
-          <div className="CurrentUser__pfpic-wrap">
+          <div className="CurrentUser__pfpic-wrap" onClick={this.refreshUserProfile}>
             <img src={this.props.user.pfpic || "http://placehold.it/200x200"}
                  alt="profile pic"
                  className="CurrentUser__pfpic" />
@@ -271,7 +280,7 @@ class LeaderScreen extends Component {
 
       return (
         <div className="LeaderScreen">
-          <h2>Last 7 Days</h2>
+          <h2>This Week</h2>
           {leaderItems}
         </div>
       );
