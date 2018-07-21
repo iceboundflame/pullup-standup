@@ -49,6 +49,8 @@ class MyComponent(ApplicationSession):
         task.LoopingCall(self.publish_state).start(0.5)
         task.LoopingCall(self.updater).start(0.0)
 
+        # slack.post_leaderboard(self.store)
+
     #
     # Authentication
     #
@@ -168,7 +170,8 @@ class MyComponent(ApplicationSession):
             self.current_user.records.append(record)
             self.store.save_user(self.current_user)
 
-            slack.post_set(self.current_user, record)
+            slack.post_set(self.store, self.current_user, record)
+            slack.post_leaderboard(self.store)
 
             # self.rfid.beep_for(0.250)
 

@@ -48,40 +48,56 @@ class User(object):
         return self.total_since(None)
 
     @property
-    def total_7d(self):
-        return self.total_since(datetime.datetime.now(pytz.utc) - datetime.timedelta(days=7))
-
-    @property
-    def total_this_week(self):
-        return self.total_since(this_week_start())
-
-    @property
     def best_lifetime(self):
         return self.best_since(None)
+
+    @property
+    def sets_lifetime(self):
+        return self.sets_since(None)
+
+    @property
+    def total_7d(self):
+        return self.total_since(datetime.datetime.now(pytz.utc) - datetime.timedelta(days=7))
 
     @property
     def best_7d(self):
         return self.best_since(datetime.datetime.now(pytz.utc) - datetime.timedelta(days=7))
 
     @property
+    def sets_7d(self):
+        return self.sets_since(datetime.datetime.now(pytz.utc) - datetime.timedelta(days=7))
+
+    @property
+    def total_this_week(self):
+        return self.total_since(this_week_start())
+
+    @property
     def best_this_week(self):
         return self.best_since(this_week_start())
 
+    @property
+    def sets_this_week(self):
+        return self.sets_since(this_week_start())
+
     def stats_since(self, start):
-        best, total = 0, 0
+        best, total, sets = 0, 0, 0
         for r in reversed(self.records):
             if start and r.created_at_dt < start:
                 break
             else:
                 best = max(best, r.pullups)
                 total += r.pullups
-        return best, total
+                sets += 1
+        return best, total, sets
 
     def best_since(self, start):
         return self.stats_since(start)[0]
 
     def total_since(self, start):
         return self.stats_since(start)[1]
+
+    def sets_since(self, start):
+        return self.stats_since(start)[2]
 
     @property
     def jsonable(self):
@@ -98,6 +114,9 @@ class User(object):
             "total_lifetime": self.total_lifetime,
             "total_7d": self.total_7d,
             "total_this_week": self.total_this_week,
+            "sets_lifetime": self.sets_lifetime,
+            "sets_7d": self.sets_7d,
+            "sets_this_week": self.sets_this_week,
         }
 
 
@@ -145,14 +164,18 @@ class UserStore(object):
             'threshold_down': self.threshold_down,
         }
 
-    def compute_leaders(self, top_n=8):
+    def compute_leaders(self, top_n=8, json=True):
         leaders_objs = map(lambda u: (u.total_this_week, u), self.users.values())
         leaders_objs = filter(lambda (cnt, u): cnt > 0, leaders_objs)
         leaders_objs = list(sorted(leaders_objs, key=lambda (cnt, u): cnt, reverse=True)[:top_n])
+
         # TODO: ties?
-        return {
-            'leaders': map(lambda (cnt, u): u.jsonable, leaders_objs),
-        }
+        if json:
+            return {
+                'leaders': map(lambda (cnt, u): u.jsonable, leaders_objs),
+            }
+        else:
+            return map(lambda (cnt, u): u, leaders_objs)
 
 #
 # user_id =>

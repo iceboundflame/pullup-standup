@@ -17,7 +17,7 @@ class App extends Component {
       max_retry_delay: 10,
     });
 
-    const maxRawLog = 2000;
+    const maxRawLog = 800;
     var nextIdx = maxRawLog;
 
     this.state = {
@@ -95,8 +95,9 @@ const KioskScreen = ({state}) => (
 const DebugScreen = ({state}) => {
   return <div>
     <Dygraph data={state.raw_log}
+             width="300"
     />
-    <div className="CurrentPullups__pullups">
+    <div className="DebugScreen__val">
       {state.pullup && state.pullup.raw_value}</div>
   </div>;
 };
@@ -267,11 +268,18 @@ class LeaderScreen extends Component {
   render() {
     if (this.state.leaders) {
       const leaderItems = this.state.leaders.map((u) =>
-        <div>
-          <div className="CurrentUser__info">
-            <div className="CurrentUser__name">{u.username}</div>
-            <div className="CurrentUser__record">
-              Total: <span>{u.total_this_week}</span> |
+        <div className="LeaderEntry">
+          <div className="LeaderEntry__pfpic-wrap">
+            <img src={u.pfpic || "http://placehold.it/200x200"}
+                 alt="profile pic"
+                 className="LeaderEntry__pfpic" />
+          </div>
+          <div className="LeaderEntry__info">
+            <div className="LeaderEntry__name">{u.name}
+              <span className="LeaderEntry__username">{u.username}</span>
+            </div>
+            <div className="LeaderEntry__record">
+              Total: <span classname="LeaderEntry__total">{u.total_this_week}</span> | Sets: {u.sets_this_week} |
               Best: <span>{u.best_this_week}</span>
             </div>
           </div>

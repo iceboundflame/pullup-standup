@@ -136,3 +136,48 @@
 .CurrentPullups__rawBar_UP {
     background: green;
 }
+
+
+.DebugScreen__val {
+    font-size: 50px;
+    font-weight: bold;
+}
+
+
+.LeaderScreen h2 {
+    margin: 7px auto 10px;
+}
+
+.LeaderEntry {
+    display: flex;
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.LeaderEntry__pfpic-wrap {
+    width: 41px;
+    flex-shrink: 0;
+    padding: 0 7px 0 10px;
+}
+.LeaderEntry__pfpic {
+    max-width: 100%;
+}
+
+.LeaderEntry__info {
+    flex-grow: 1;
+    min-width: 0;  /* needed for ellipsis name truncation */
+}
+.LeaderEntry__name {
+    font-weight: bold;
+    font-size: 20px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.LeaderEntry__username {
+    font-weight: lighter;
+    font-size: 13px;
+    padding-left: 20px;
+    color: #666;
+}
