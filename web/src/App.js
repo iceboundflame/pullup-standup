@@ -95,7 +95,7 @@ const KioskScreen = ({state}) => (
 const DebugScreen = ({state}) => {
   return <div>
     <Dygraph data={state.raw_log}
-             width="300"
+             width={300}
     />
     <div className="DebugScreen__val">
       {state.pullup && state.pullup.raw_value}</div>
@@ -227,8 +227,8 @@ class Enrollment extends Component {
         <div>
           <h2>Welcome new user! Please register:</h2>
           <form>
-            <input type="text" value={this.state.username} onChange={this.handleChange}
-              ref={(input) => { this.usernameInput = input; } }/>
+            <input type="text" value={this.state.username} onInput={this.handleChange}
+              ref={(input) => { this.usernameInput = input; } } />
             <button onClick={this.enroll} disabled={!this.state.username}>Register</button>
             <button onClick={this.cancel}>Cancel</button>
           </form>
@@ -279,7 +279,7 @@ class LeaderScreen extends Component {
               <span className="LeaderEntry__username">{u.username}</span>
             </div>
             <div className="LeaderEntry__record">
-              Total: <span classname="LeaderEntry__total">{u.total_this_week}</span> | Sets: {u.sets_this_week} |
+              Total: <span>{u.total_this_week}</span> | Sets: {u.sets_this_week} |
               Best: <span>{u.best_this_week}</span>
             </div>
           </div>

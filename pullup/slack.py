@@ -35,11 +35,10 @@ def refresh_user_from_slack_internal(slack_users_by_name, user):
 
 def refresh_user_from_slack(user):
     try:
-        sc = SlackClient(SLACK_TOKEN)
-
         # unfortunately we have to get ALL users to find the user with this username
-        resp = sc.api_call("users.list")
+        print "REFRESH USER: Getting All Slack Users"
         slack_users_by_name = get_slack_users()
+        print "REFRESH USER: Got Slack Users"
         refresh_user_from_slack_internal(slack_users_by_name, user)
 
     except:

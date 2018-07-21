@@ -7,10 +7,11 @@
 import os
 
 import pigpio
+import sys
 from autobahn.twisted import ApplicationSession
 from autobahn.twisted.wamp import ApplicationRunner
 from twisted.internet import reactor
-from twisted.internet import task
+from twisted.internet import task, threads
 
 from pullup.hw import PullupTracker, RfidReader, State
 from pullup.store import UserStore, User, PullupRecord
@@ -35,6 +36,10 @@ class MyComponent(ApplicationSession):
         print "Thresholds:", \
             self.pullup_tracker.threshold_up, \
             self.pullup_tracker.threshold_down
+
+    def onClose(self, wasClean):
+        print "Lost Crossbar connection"
+        reactor.stop()
 
     def onJoin(self, details):
         print "Joined Crossbar"
@@ -74,19 +79,33 @@ class MyComponent(ApplicationSession):
         self.publish_state()
 
     def refresh_user_profile(self):
+        # WARNING: This really lags because it's loading ALL slack users. Even though it's deferred to a thread,
+        # it causes the pullup tracker to refresh a lot less frequently and possibly miss pullups.
+        # Avoid calling this, except on enrollment and when user requests a refresh (taps image).
+
         if self.current_user:
-            slack.refresh_user_from_slack(self.current_user)
-            self.store.save_user(self.current_user)
-            self.publish_state()
+            def cb(result):
+                print "REFRESH USER: Saving Refreshed User"
+                self.store.save_user(self.current_user)
+                print "REFRESH USER: Done"
+                self.publish_state()
+
+            d = threads.deferToThread(slack.refresh_user_from_slack, self.current_user)
+            d.addCallback(cb)
 
     def set_username(self, new_username):
+        # UNTESTED
         if self.current_user and self.current_user.username != new_username:
             if self.store.get_user(new_username):
                 raise ValueError("Username already exists")
 
+            old_username = self.current_user.username
             self.current_user.username = new_username
-            slack.refresh_user_from_slack(self.current_user)
+            del self.store.users[old_username]
             self.store.save_user(self.current_user)
+
+            self.publish_state()
+            self.refresh_user_profile()
 
     def enroll(self, username):
         if not self.enrolling_code:
@@ -103,9 +122,9 @@ class MyComponent(ApplicationSession):
             self.current_user = User(username, username)
             print "Creating new user", self.current_user
         self.current_user.badge_codes.append(self.enrolling_code)
-
-        slack.refresh_user_from_slack(self.current_user)
         self.store.save_user(self.current_user)
+
+        self.refresh_user_profile()
 
         self.rfid.is_green = True
         self.publish_state()
@@ -170,8 +189,10 @@ class MyComponent(ApplicationSession):
             self.current_user.records.append(record)
             self.store.save_user(self.current_user)
 
-            slack.post_set(self.store, self.current_user, record)
-            slack.post_leaderboard(self.store)
+            def post():
+                slack.post_set(self.store, self.current_user, record)
+                slack.post_leaderboard(self.store)
+            reactor.callInThread(post)
 
             # self.rfid.beep_for(0.250)
 
@@ -187,7 +208,7 @@ class MyComponent(ApplicationSession):
         self.store.save()
 
     def get_leaders(self):
-        return self.store.compute_leaders()
+        return threads.deferToThread(self.store.compute_leaders)
 
 
 if __name__ == '__main__':
