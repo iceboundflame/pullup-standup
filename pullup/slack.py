@@ -15,6 +15,7 @@ if not SLACK_TOKEN:
         traceback.print_exc()
 
 
+USERNAME = "Pullup Bar"
 CHANNEL = "#pullups"
 
 
@@ -53,6 +54,7 @@ def post_set(store, user, record):
         sc.api_call(
             "chat.postMessage",
             channel=CHANNEL,
+            username=USERNAME,
             text=":muscle: :rightmuscle: *{}* just did *{} {}*!".format(
                 "<@{}>".format(user.slackid) if user.slackid else user.name,
                 record.pullups,
@@ -74,6 +76,7 @@ def post_leaderboard(store):
         sc.api_call(
             "chat.postMessage",
             channel=CHANNEL,
+            username=USERNAME,
             text="This Week's Leaderboard:\n```{}```".format(leaderboard)
         )
 
