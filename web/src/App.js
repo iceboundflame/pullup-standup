@@ -65,7 +65,7 @@ class App extends Component {
       <div className="App">
         <header className="App__header">
           <Link to="/">Pullup Standup</Link>
-          <Link to="/debug" style={{float:'right'}}>[dbg]</Link>
+          <Link to="/debug" style={{float:'right', 'font-size':'smaller'}}>[dbg]</Link>
         </header>
 
         {/*<Route exact path="/"*/}
@@ -279,7 +279,8 @@ class LeaderScreen extends Component {
               <span className="LeaderEntry__username">{u.username}</span>
             </div>
             <div className="LeaderEntry__record">
-              Total: <span>{u.total_this_week}</span> | Sets: {u.sets_this_week} |
+              Total: <span>{u.total_this_week}</span> |
+              Sets: <span>{u.sets_this_week}</span> |
               Best: <span>{u.best_this_week}</span>
             </div>
           </div>

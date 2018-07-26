@@ -7,7 +7,10 @@
 
     width: 100vw;
     height: 100vh;
+
     overflow: hidden;
+    cursor: none;
+    user-select: none;
 }
 
 .App__header {
@@ -169,7 +172,7 @@
 }
 .LeaderEntry__name {
     font-weight: bold;
-    font-size: 20px;
+    font-size: 18px;
 
     white-space: nowrap;
     overflow: hidden;
@@ -178,6 +181,17 @@
 .LeaderEntry__username {
     font-weight: lighter;
     font-size: 13px;
-    padding-left: 20px;
+    padding-left: 8px;
     color: #666;
+}
+.LeaderEntry__record {
+    font-weight: lighter;
+    font-size: 13px;
+    padding-left: 8px;
+    color: #666;
+}
+.LeaderEntry__record span {
+    font-weight: bolder;
+    color: #333;
+    font-size: 16px;
 }
