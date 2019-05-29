@@ -226,6 +226,7 @@ class Enrollment extends Component {
     return (
         <div>
           <h2>Welcome new user! Please register:</h2>
+          <p>Use your Pinterest Slack username to have your photo & name show up.</p>
           <form>
             <input type="text" value={this.state.username} onInput={this.handleChange}
               ref={(input) => { this.usernameInput = input; } } />
