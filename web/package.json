@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "devDependencies": {
-    "react-scripts": "1.1.4"
+    "react-scripts": "5.0.1"
   },
   "dependencies": {
     "autobahn": "^18.3.2",
     "chart.js": "^2.4.0",
     "infinidat-react-dygraphs": "0.0.4",
-    "npm": "^6.2.0",
+    "npm": "^11.4.2",
     "react": "^15.4.2",
     "react-chartjs-2": "^2.0.0",
     "react-dom": "^15.4.2",
